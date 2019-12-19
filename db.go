@@ -194,7 +194,7 @@ func (db *FirestoreDb) Delete(dummy Object, document []string) error {
 	doc := db.client.Doc(document_path)
 	subcollections := dummy.Subcollections()
 	for _, subcollection := range subcollections {
-		err = db.Clear(subcollection.obj, append(document, subcollection.name))
+		err = db.Clear(subcollection.Obj, append(document, subcollection.Name))
 		if err != nil {
 			return err
 		}

@@ -19,8 +19,8 @@ type Object interface {
 }
 
 type Subcollection struct {
-	name string
-	obj  Object
+	Name string
+	Obj  Object
 }
 
 type Db interface {

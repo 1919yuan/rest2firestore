@@ -3,6 +3,8 @@ package rest2firestore
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"path"
 
 	"cloud.google.com/go/firestore"
@@ -12,8 +14,8 @@ type Object interface {
 	DeserializeList(docs []*firestore.DocumentSnapshot) ([]Object, error)
 	SerializeList() ([]map[string]interface{}, error)
 	PostprocessList(objs []Object) ([]Object, error)
-	Deserialize(doc *firestore.DocumentSnapshot) (Object, error)
-	Serialize() (map[string]interface{}, error)
+	Deserialize(doc *firestore.DocumentSnapshot)
+	Serialize()
 	Search(client *firestore.Client) (document []string, err error)
 	Subcollections() []Subcollection
 }
@@ -34,7 +36,7 @@ type Db interface {
 }
 
 type FirestoreDb struct {
-	Client *firestore.Client
+	client *firestore.client
 }
 
 var _ Db = &FirestoreDb{}
@@ -126,6 +128,7 @@ func (db *FirestoreDb) Post(obj Object, collection []string) (Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	obj.Serialize()
 	doc, _, err := db.Client.Collection(collection_path).Add(ctx, obj)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -152,6 +155,7 @@ func (db *FirestoreDb) Patch(obj Object) (Object, error) {
 	if _, err := doc.Get(ctx); err != nil {
 		return nil, fmt.Errorf("%s:Patch - no object found: %v", err)
 	}
+	obj.Serialize()
 	if _, err := doc.Set(ctx, obj); err != nil {
 		return nil, fmt.Errorf("%s:Patch - could not update object: %v", err)
 	}
@@ -203,4 +207,15 @@ func (db *FirestoreDb) Delete(dummy Object, document []string) error {
 		return fmt.Errorf("%s:Delete - could not delete object: %v", document_path, err)
 	}
 	return nil
+}
+
+func CreateFirestoreDb(ctx context.Context) *FirestoreDb {
+	client, err :=
+		firestore.NewClient(ctx, os.Getenv("GOOGLE_CLOUD_PROJECT"))
+	if err != nil {
+		log.Fatalf("Failed to connect to firestore: %v", err)
+	}
+	return &FirestoreDb{
+		client: client,
+	}
 }

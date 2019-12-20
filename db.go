@@ -70,6 +70,10 @@ func getDocumentPath(document []string) (
 	return collection_path, document_id, nil
 }
 
+func (db *FirestoreDb) Client() *firestore.Client {
+	return db.client
+}
+
 func (db *FirestoreDb) List(obj Object, collection []string) ([]Object, error) {
 	ctx := context.Background()
 	collection_path, err := getCollectionPath(collection)

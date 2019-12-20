@@ -12,9 +12,9 @@ import (
 
 type Object interface {
 	DeserializeList(docs []*firestore.DocumentSnapshot) ([]Object, error)
-	SerializeList() ([]map[string]interface{}, error)
+	SerializeList()
 	PostprocessList(objs []Object) ([]Object, error)
-	Deserialize(doc *firestore.DocumentSnapshot)
+	Deserialize(doc *firestore.DocumentSnapshot) (Object, error)
 	Serialize()
 	Search(client *firestore.Client) (document []string, err error)
 	Subcollections() []Subcollection
@@ -36,7 +36,7 @@ type Db interface {
 }
 
 type FirestoreDb struct {
-	client *firestore.client
+	client *firestore.Client
 }
 
 var _ Db = &FirestoreDb{}
@@ -76,7 +76,7 @@ func (db *FirestoreDb) List(obj Object, collection []string) ([]Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	docs, err := db.Client.Collection(collection_path).Documents(ctx).GetAll()
+	docs, err := db.client.Collection(collection_path).Documents(ctx).GetAll()
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%s:List - could not list objects: %v", collection_path, err)
@@ -98,7 +98,7 @@ func (db *FirestoreDb) Clear(dummy Object, collection []string) error {
 	if err != nil {
 		return err
 	}
-	docs, err := db.Client.Collection(collection_path).Documents(ctx).GetAll()
+	docs, err := db.client.Collection(collection_path).Documents(ctx).GetAll()
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func (db *FirestoreDb) Clear(dummy Object, collection []string) error {
 
 func (db *FirestoreDb) Post(obj Object, collection []string) (Object, error) {
 	ctx := context.Background()
-	existing_document, err := obj.Search(db.Client)
+	existing_document, err := obj.Search(db.client)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (db *FirestoreDb) Post(obj Object, collection []string) (Object, error) {
 		return nil, err
 	}
 	obj.Serialize()
-	doc, _, err := db.Client.Collection(collection_path).Add(ctx, obj)
+	doc, _, err := db.client.Collection(collection_path).Add(ctx, obj)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%s:Post - could not create object: %v", collection_path, err)
@@ -139,7 +139,7 @@ func (db *FirestoreDb) Post(obj Object, collection []string) (Object, error) {
 
 func (db *FirestoreDb) Patch(obj Object) (Object, error) {
 	ctx := context.Background()
-	existing_document, err := obj.Search(db.Client)
+	existing_document, err := obj.Search(db.client)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (db *FirestoreDb) Patch(obj Object) (Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc := db.Client.Doc(path.Join(collection_path, document_id))
+	doc := db.client.Doc(path.Join(collection_path, document_id))
 	if _, err := doc.Get(ctx); err != nil {
 		return nil, fmt.Errorf("%s:Patch - no object found: %v", err)
 	}
@@ -163,7 +163,7 @@ func (db *FirestoreDb) Patch(obj Object) (Object, error) {
 }
 
 func (db *FirestoreDb) Put(obj Object, collection []string) (Object, error) {
-	existing_document, err := obj.Search(db.Client)
+	existing_document, err := obj.Search(db.client)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (db *FirestoreDb) Get(obj Object, document []string) (Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc, err := db.Client.Collection(collection_path).Doc(document_id).Get(ctx)
+	doc, err := db.client.Collection(collection_path).Doc(document_id).Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%s/%s:Get - could not get object: %v", collection_path, document_id, err)
@@ -195,7 +195,7 @@ func (db *FirestoreDb) Delete(dummy Object, document []string) error {
 		return nil
 	}
 	document_path := path.Join(collection_path, document_id)
-	doc := db.Client.Doc(document_path)
+	doc := db.client.Doc(document_path)
 	subcollections := dummy.Subcollections()
 	for _, subcollection := range subcollections {
 		err = db.Clear(subcollection.Obj, append(document, subcollection.Name))

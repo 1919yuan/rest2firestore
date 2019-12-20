@@ -12,7 +12,7 @@ import (
 
 type Object interface {
 	DeserializeList(docs []*firestore.DocumentSnapshot) ([]Object, error)
-	SerializeList()
+	SerializeList(objects []Object)
 	PostprocessList(objs []Object) ([]Object, error)
 	Deserialize(doc *firestore.DocumentSnapshot) (Object, error)
 	Serialize()

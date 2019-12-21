@@ -170,16 +170,13 @@ func (db *FirestoreDb) Patch(obj Object) (Object, error) {
 	return db.Get(obj, existing_document)
 }
 
-func (db *FirestoreDb) Put(obj Object, collection []string) (Object, error) {
-	existing_document, err := obj.Search(db.client)
+func (db *FirestoreDb) Put(obj Object, doc_path []string) (Object, error) {
+	ctx := context.Background()
+	_, err := db.client.Doc(path.Join(doc_path...)).Set(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
-	if len(existing_document) == 0 {
-		return db.Post(obj, collection)
-	} else {
-		return db.Patch(obj)
-	}
+	return db.Get(obj, doc_path)
 }
 
 func (db *FirestoreDb) Get(obj Object, document []string) (Object, error) {

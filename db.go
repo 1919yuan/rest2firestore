@@ -74,7 +74,7 @@ func (db *FirestoreDb) Client() *firestore.Client {
 	return db.client
 }
 
-func (db *FirestoreDb) Close() *firestore.Client {
+func (db *FirestoreDb) Close() {
 	db.client.Close()
 }
 

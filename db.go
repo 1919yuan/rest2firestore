@@ -74,6 +74,10 @@ func (db *FirestoreDb) Client() *firestore.Client {
 	return db.client
 }
 
+func (db *FirestoreDb) Close() *firestore.Client {
+	db.client.Close()
+}
+
 func (db *FirestoreDb) List(obj Object, collection []string) ([]Object, error) {
 	ctx := context.Background()
 	collection_path, err := getCollectionPath(collection)

@@ -179,6 +179,17 @@ func (db *FirestoreDb) Put(obj Object, doc_path []string) (Object, error) {
 	return db.Get(obj, doc_path)
 }
 
+func (db *FirestoreDb) Merge(
+	obj Object, doc_path []string, props []string) (Object, error) {
+	ctx := context.Background()
+	_, err := db.client.Doc(
+		path.Join(doc_path...)).Set(ctx, obj, firestore.Merge(props))
+	if err != nil {
+		return nil, err
+	}
+	return db.Get(obj, doc_path)
+}
+
 func (db *FirestoreDb) Get(obj Object, document []string) (Object, error) {
 	ctx := context.Background()
 	collection_path, document_id, err := getDocumentPath(document)

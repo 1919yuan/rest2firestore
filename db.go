@@ -172,6 +172,7 @@ func (db *FirestoreDb) Patch(obj Object) (Object, error) {
 
 func (db *FirestoreDb) Put(obj Object, doc_path []string) (Object, error) {
 	ctx := context.Background()
+	obj.Serialize()
 	_, err := db.client.Doc(path.Join(doc_path...)).Set(ctx, obj)
 	if err != nil {
 		return nil, err
